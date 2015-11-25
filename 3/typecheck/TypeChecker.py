@@ -207,7 +207,7 @@ class TypeChecker:
         instrs = filter(lambda x: x.__class__.__name__ == 'Return', funDef.instr.instr)
         if len(instrs) == 0:
             self.raiseError("Error: Missing return statement in function '" + funDef.ident + "' returning " + funDef.typ
-                            + ": line " + str(funDef.lineno))  # TODO
+                            + ": line " + str(funDef.lineno))
         else:
             for retInstr in instrs:
                 valueType = retInstr.accept(self)
