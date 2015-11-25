@@ -45,18 +45,14 @@ class TypeChecker:
                     try:
                         self.symbolTable.put(var.left, VariableSymbol(var.left, Type, var))
                     except Exception:
-                        self.raiseError("(linia " + str(
-                            var.lineno) + "): Ponowna deklaracja \"" + var.left + "\", linia pierwszej deklaracji " + str(
-                            self.symbolTable.get(var.left).lineno()) + ".")
+                        self.raiseError("Error: Variable '" + var.left + "' already declared: line " + str(var.lineno))
 
     def analyzeFunctionDeclarations(self, declarationsList):
         for funDef in declarationsList:
             try:
                 self.symbolTable.put(funDef.ident, FunctionSymbol(funDef.ident, funDef.typ, funDef.args, funDef))
             except Exception:
-                self.raiseError("(linia " + str(
-                    funDef.lineno) + "): Ponowna deklaracja funkcji \"" + funDef.ident + "\", linia pierwszej deklaracji " + str(
-                    self.symbolTable.get(funDef.ident).lineno()) + ".")
+                self.raiseError("Error: Redefinition of function '" + funDef.ident + "': line " + str(funDef.lineno))
             if funDef.accept(self) is None:
                 self.raiseError("(linia " + str(funDef.lineno) + "): Bledna definicja funkcji " + funDef.ident + ".")
 
@@ -90,8 +86,8 @@ class TypeChecker:
         if rightType is not None and leftType is not None:
             Type = self.operationsTable.getOperationType(op, leftType, rightType)
             if Type is None:
-                self.raiseError("(linia " + str(
-                    node.lineno) + "): Operacja neiobslugiwana:" + leftType + " " + op + " " + rightType + ".")
+                self.raiseError(
+                    "Error: Illegal operation, " + leftType + " " + op + " " + rightType + ": line " + str(node.lineno))
             return Type
 
     def visit_Assignment(self, assInstr):
@@ -101,7 +97,7 @@ class TypeChecker:
         rightType = self.acceptOrVar(assInstr.right)
         if leftType is None:
             self.raiseError(
-                "(linia " + str(assInstr.lineno) + "): Uzycie niezadeklarowanej nazwy " + assInstr.left + ".")
+                "Error: Variable '" + assInstr.left + "' undefined in current scope: line " + str(assInstr.lineno))
         if rightType is None:
             self.raiseError("(linia " + str(assInstr.lineno) + "): Nie obslugiwany typ wartosci przypisywanej.")
         if rightType is not None and leftType is not None:
@@ -153,8 +149,7 @@ class TypeChecker:
                 print("Ostrzezenie (linia " + str(
                     var.lineno) + ") Przypisanie float do int, mozliwa utrata dokladnosci")
             elif not TypeChecker.typesAreCoherent(should=valueType, beType=Type):
-                self.raiseError("(linia " + str(
-                    var.lineno) + "): Zla inicjalizacja zmiennej " + var.left + ", wymagany " + Type + ", znaleziony " + valueType)
+                self.raiseError("Error: Assigment of " + valueType + " to " + Type + ": line " + str(var.lineno))
                 result = False
         return result
 
@@ -170,7 +165,7 @@ class TypeChecker:
     def visit_Print(self, instr):
         Type = self.acceptOrVar(instr.expr)
         if Type is None:
-            self.raiseError("(linia " + str(instr.lineno) + "): Bledny typ argumentu.")
+            self.raiseError("Error: Usage of undeclared variable '" + instr.expr + "': line " + str(instr.lineno))
 
     def visit_Argument(self, arg):
         return arg.typ
@@ -178,15 +173,16 @@ class TypeChecker:
     def visit_FunctionCall(self, funCall):
         funDef = self.symbolTable.get(funCall.ident)
         if funDef is None:
-            self.raiseError("(linia " + str(funCall.lineno) + "): Funkcja " + funCall.ident + " nie istnieje.")
+            self.raiseError("Error: Call of undefined fun: '" + funCall.ident + "': line " + str(funCall.lineno))
             return None
-
+        if len(funDef.args) != len(funCall.args):
+            self.raiseError("Error: Improper number of args in " + funCall.ident + ": line " + str(funCall.lineno))
+            return funDef.type
         for left, right in zip(funDef.args, funCall.args):
             defType = left.accept(self)
             callType = self.acceptOrVar(right)
             if not TypeChecker.typesAreCoherent(should=callType, beType=defType):
-                self.raiseError("(linia " + str(
-                    funCall.lineno) + "): Zly typ parametru, wymagany " + defType + ", znaleziony " + callType + ".")
+                self.raiseError("Error: Improper type of args in " + funCall.ident + ": line " + str(funCall.lineno))
         return funDef.type
 
     def visit_ChoiceInstruction(self, instr):
@@ -210,13 +206,17 @@ class TypeChecker:
 
         instrs = filter(lambda x: x.__class__.__name__ == 'Return', funDef.instr.instr)
         if len(instrs) == 0:
-            self.raiseError("Brak return w funkcji")  # TODO
+            self.raiseError("Error: Missing return statement in function '" + funDef.ident + "' returning " + funDef.typ
+                            + ": line " + str(funDef.lineno))  # TODO
         else:
             for retInstr in instrs:
                 valueType = retInstr.accept(self)
                 if valueType is None:
-                    print "(linia " + str(
-                        retInstr.lineno) + "): Zly zwracany typ, uzyto niezadeklarowanej zmiennej", retInstr.value
+                    a = 5
+                # self.raiseError("Error: Incorrect return type, used undeclared function: '" + retInstr.ident + "': line " + str(
+                #     retInstr.lineno))
+                # print "(linia " + str(
+                #     retInstr.lineno) + "): Zly zwracany typ, uzyto niezadeklarowanej zmiennej", retInstr.value
                 elif valueType != funDef.typ:
                     print "(linia " + str(
                         retInstr.lineno) + "): Zly zwracany typ, wymagany", funDef.typ + ", znaleziony", valueType
