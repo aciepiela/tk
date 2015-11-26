@@ -99,7 +99,8 @@ class TypeChecker:
             self.raiseError(
                 "Error: Variable '" + assInstr.left + "' undefined in current scope: line " + str(assInstr.lineno))
         if rightType is None:
-            self.raiseError("(linia " + str(assInstr.lineno) + "): Nie obslugiwany typ wartosci przypisywanej.")
+            self.raiseError(
+                "Error: Illegal assigment to variable '" + assInstr.left + "': line " + str(assInstr.lineno))
         if rightType is not None and leftType is not None:
             if (leftType == 'int' and rightType == 'float'):
                 print("Ostrzezenie (linia " + str(
@@ -162,11 +163,6 @@ class TypeChecker:
     def visit_String(self, var):
         return 'string'
 
-    def visit_Print(self, instr):
-        Type = self.acceptOrVar(instr.expr)
-        if Type is None:
-            self.raiseError("Error: Usage of undeclared variable '" + instr.expr + "': line " + str(instr.lineno))
-
     def visit_Argument(self, arg):
         return arg.typ
 
@@ -182,7 +178,9 @@ class TypeChecker:
             defType = left.accept(self)
             callType = self.acceptOrVar(right)
             if not TypeChecker.typesAreCoherent(should=callType, beType=defType):
-                self.raiseError("Error: Improper type of args in " + funCall.ident + ": line " + str(funCall.lineno))
+                self.raiseError("Error: Improper type of arg in " + funCall.ident
+                                + ", expected " + defType + ", actual " + callType + ": line " + str(funCall.lineno))
+                return funDef.type
         return funDef.type
 
     def visit_ChoiceInstruction(self, instr):
@@ -206,7 +204,8 @@ class TypeChecker:
 
         instrs = filter(lambda x: x.__class__.__name__ == 'Return', funDef.instr.instr)
         if len(instrs) == 0:
-            self.raiseError("Error: Missing return statement in function '" + funDef.ident + "' returning " + funDef.typ
+            self.raiseError(
+                "Error: Missing correct return statement in function '" + funDef.ident + "' returning " + funDef.typ
                             + ": line " + str(funDef.lineno))
         else:
             for retInstr in instrs:
