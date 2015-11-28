@@ -142,9 +142,13 @@ class TypeChecker:
         return self.errors is 0
 
     def visit_Variable(self, variable):
+
         Type = variable.typ
         result = True
         for var in variable.variables:
+            if str(var.left) == "pow":
+                self.raiseError("Error: Function identifier 'pow' used as a variable: "+ str(var.lineno))
+                return None
             valueType = var.right.accept(self)
             if (Type == 'int' and valueType == 'float'):
                 print("Ostrzezenie (linia " + str(
@@ -191,6 +195,29 @@ class TypeChecker:
         self.visit_ChoiceInstruction(instr)
         self.analyzeInstructionBlock(instr.elinstr)
 
+    def findReturnStatement(self, inst, returnInstructions):
+        if isinstance(inst, Return):
+            returnInstructions.append(inst)
+        elif isinstance(inst, list):
+            for i in inst:
+                if isinstance(i, Return):
+                    returnInstructions.append(i)
+                elif isinstance(i, ChoiceInstruction):
+                    self.findReturnStatement(i.instr, returnInstructions)
+                elif isinstance(i, ChoiceInstructionWithElse):
+                    self.findReturnStatement(i.instr, returnInstructions)
+                    self.findReturnStatement(i.elinstr, returnInstructions)
+                elif isinstance(i, CompoundInstruction):
+                    self.findReturnStatement(i.instr, returnInstructions)
+        else:
+            if isinstance(inst, ChoiceInstruction):
+                self.findReturnStatement(inst.instr, returnInstructions)
+            elif isinstance(inst, ChoiceInstructionWithElse):
+                self.findReturnStatement(inst.instr, returnInstructions)
+                self.findReturnStatement(inst.elinstr, returnInstructions)
+            elif isinstance(inst, CompoundInstruction):
+                self.findReturnStatement(inst.instr, returnInstructions)
+
     def visit_FunctionDefinition(self, funDef):
         prevTable = self.symbolTable
         self.symbolTable = SymbolTable(prevTable, "fundef(" + funDef.ident + ") scope")
@@ -201,12 +228,12 @@ class TypeChecker:
         functionsBodySymbolTable = self.analyzeInstructionBlock(funDef.instr)
 
         self.symbolTable = functionsBodySymbolTable
-
-        instrs = filter(lambda x: x.__class__.__name__ == 'Return', funDef.instr.instr)
+        instrs = []
+        self.findReturnStatement(funDef.instr, instrs)
         if len(instrs) == 0:
-            self.raiseError(
-                "Error: Missing correct return statement in function '" + funDef.ident + "' returning " + funDef.typ
-                            + ": line " + str(funDef.lineno))
+                self.raiseError(
+                    "Error: Missing correct return statement in function '" + funDef.ident + "' returning " + funDef.typ
+                        + ": line " + str(funDef.lineno))
         else:
             for retInstr in instrs:
                 valueType = retInstr.accept(self)
