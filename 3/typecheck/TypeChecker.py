@@ -54,7 +54,8 @@ class TypeChecker:
             except Exception:
                 self.raiseError("Error: Redefinition of function '" + funDef.ident + "': line " + str(funDef.lineno))
             if funDef.accept(self) is None:
-                self.raiseError("(linia " + str(funDef.lineno) + "): Bledna definicja funkcji " + funDef.ident + ".")
+                self.raiseError(
+                    "(Error:  " + str(funDef.lineno) + "): Improper function definition " + funDef.ident + ".")
 
     def analyzeInstructionBlock(self, block):
         if isinstance(block, CompoundInstruction):
@@ -73,16 +74,16 @@ class TypeChecker:
     def analyzeCondExpr(self, expr):
         condType = expr.accept(self)
         if condType != 'int':
-            self.raiseError("(linia " + str(expr.lineno) + "): Nieprawidlowe wyrazenie warunkowe.")
+            self.raiseError("(Error:  " + str(expr.lineno) + "): Improper condition statement.")
 
     def visit_BinExpr(self, node):
         leftType = self.acceptOrVar(node.left)
         rightType = self.acceptOrVar(node.right)
         op = node.op
         if leftType is None:
-            self.raiseError("(linia " + str(node.lineno) + "): Nie obslugiwany typ lewej strony.")
+            self.raiseError("(Error:  " + str(node.lineno) + "): Unsupported left type.")
         if rightType is None:
-            self.raiseError("(linia " + str(node.lineno) + "): Nie obslugiwany typ prawej strony.")
+            self.raiseError("(Error:  " + str(node.lineno) + "): Unsuppored right type.")
         if rightType is not None and leftType is not None:
             Type = self.operationsTable.getOperationType(op, leftType, rightType)
             if Type is None:
@@ -92,7 +93,7 @@ class TypeChecker:
 
     def visit_Assignment(self, assInstr):
         if assInstr.left.__class__.__name__ != 'str':
-            self.raiseError("(linia " + str(assInstr.lineno) + "): Lewa strona przypisania musi byc identyfikatorem.")
+            self.raiseError("(Error:  " + str(assInstr.lineno) + "): Left side not an identifier.")
         leftType = self.acceptOrVar(assInstr.left)
         rightType = self.acceptOrVar(assInstr.right)
         if leftType is None:
@@ -103,11 +104,11 @@ class TypeChecker:
                 "Error: Illegal assigment to variable '" + assInstr.left + "': line " + str(assInstr.lineno))
         if rightType is not None and leftType is not None:
             if (leftType == 'int' and rightType == 'float'):
-                print("Ostrzezenie (linia " + str(
-                    assInstr.lineno) + ") Przypisanie float do int, mozliwa utrata dokladnosci")
+                print("Warning (Line:  " + str(
+                    assInstr.lineno) + ") Assigment of float to int")
             elif not TypeChecker.typesAreCoherent(should=rightType, beType=leftType):
-                self.raiseError("(linia " + str(
-                    assInstr.lineno) + "): Zly typ wartości przypisywanej, wymagany " + leftType + ", znaleziony " + rightType + ".")
+                self.raiseError("(Line " + str(
+                    assInstr.lineno) + "): Improper returned type, expected " + leftType + ", got " + rightType + ".")
 
     def visit_CompoundInstruction(self, compInstr):
         prevTable = self.symbolTable
@@ -127,7 +128,6 @@ class TypeChecker:
         whLoop.instr.accept(self)
         self.symbolTable = prevTable
 
-
     def visit_RepeatUntilLoop(self, repeatLoop):
         prevTable = self.symbolTable
         self.symbolTable = SymbolTable(prevTable.parent, prevTable.name)
@@ -141,9 +141,9 @@ class TypeChecker:
         type2 = self.acceptOrVar(node.right)
         op = node.op
         if type1 is None:
-            self.raiseError("(linia " + str(node.lineno) + "): Nie obslugiwany typ wyrazenia po lewej.")
+            self.raiseError("(Error:  " + str(node.lineno) + "): Unsupported left side type.")
         if type2 is None:
-            self.raiseError("(linia " + str(node.lineno) + "):  Nie obslugiwany typ wyrazenia po prawej.")
+            self.raiseError("(linia " + str(node.lineno) + "):  Unsupported right side type.")
         return self.operationsTable.getOperationType(op, type1, type2)
 
     def visit_Program(self, program):
@@ -157,12 +157,12 @@ class TypeChecker:
         result = True
         for var in variable.variables:
             if str(var.left) == "pow":
-                self.raiseError("Error: Function identifier 'pow' used as a variable: "+ str(var.lineno))
+                self.raiseError("Error: Function identifier 'pow' used as a variable: line " + str(var.lineno))
                 return None
             valueType = var.right.accept(self)
             if (Type == 'int' and valueType == 'float'):
-                print("Ostrzezenie (linia " + str(
-                    var.lineno) + ") Przypisanie float do int, mozliwa utrata dokladnosci")
+                print("Warning (linia " + str(
+                    var.lineno) + ") Assigment of float to int")
             elif not TypeChecker.typesAreCoherent(should=valueType, beType=Type):
                 self.raiseError("Error: Assigment of " + valueType + " to " + Type + ": line " + str(var.lineno))
                 result = False
@@ -240,9 +240,9 @@ class TypeChecker:
         instrs = []
         self.findReturnStatement(funDef.instr, instrs)
         if len(instrs) == 0:
-                self.raiseError(
-                    "Error: Missing correct return statement in function '" + funDef.ident + "' returning " + funDef.typ
-                        + ": line " + str(funDef.lineno))
+            self.raiseError(
+                "Error: Missing correct return statement in function '" + funDef.ident + "' returning " + funDef.typ
+                + ": line " + str(funDef.lineno))
         else:
             for retInstr in instrs:
                 valueType = retInstr.accept(self)
@@ -253,9 +253,8 @@ class TypeChecker:
                 # print "(linia " + str(
                 #     retInstr.lineno) + "): Zly zwracany typ, uzyto niezadeklarowanej zmiennej", retInstr.value
                 elif valueType != funDef.typ:
-                    print "(linia " + str(
-                        retInstr.lineno) + "): Zly zwracany typ, wymagany", funDef.typ + ", znaleziony", valueType
-
+                    print "Error: Improper returned type, expected " + funDef.typ + ", got " + valueType + ": line " + str(
+                        retInstr.lineno)
         self.symbolTable = prevTable
 
         return funDef.typ
@@ -264,8 +263,8 @@ class TypeChecker:
         table = self.symbolTable
         symbolTableName = table.name
         inFunction = False
-        while(table.getParentScope() is not None):
-            if(symbolTableName.find("fundef") is not -1):
+        while (table.getParentScope() is not None):
+            if (symbolTableName.find("fundef") is not -1):
                 inFunction = True
             table = table.getParentScope()
             symbolTableName = table.name
@@ -277,14 +276,15 @@ class TypeChecker:
     def visit_Print(self, prt):
         prtType = self.acceptOrVar(prt.expr)
         if prtType is None:
-            self.raiseError("Error: Expression '" + str(prt.expr) + "' undefined in current scope: line " + str(prt.lineno))
+            self.raiseError(
+                "Error: Expression '" + str(prt.expr) + "' undefined in current scope: line " + str(prt.lineno))
             return None
-        return  None
+        return None
 
     def visit_Continue(self, cont):
         if self.symbolTable.get("while") is None and self.symbolTable.get("repeat") is None:
-            self.raiseError("Error: continue instruction outside a loop: "+ str(cont.lineno))
+            self.raiseError("Error: continue instruction outside a loop: " + str(cont.lineno))
 
     def visit_Break(self, cont):
         if self.symbolTable.get("while") is None and self.symbolTable.get("repeat") is None:
-            self.raiseError("Error: break instruction outside a loop: "+ str(cont.lineno))
+            self.raiseError("Error: break instruction outside a loop: " + str(cont.lineno))
