@@ -64,3 +64,6 @@ class SymbolTable(object):
         if self.parent is not None:
             self.parent.printSelf()
         print self.name, self.currentScope
+
+    def append(self, symbolTable):
+        self.currentScope.update(symbolTable.currentScope)

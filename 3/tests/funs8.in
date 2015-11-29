@@ -65,7 +65,6 @@ int gcd_iter(int a, int b) {
 }
 
 print gcd(125,100);
-print gcd2(125,100);
 print lcm(125,100);
 
 

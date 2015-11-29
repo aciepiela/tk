@@ -119,10 +119,20 @@ class TypeChecker:
         return symbolTable
 
     def visit_WhileLoop(self, whLoop):
+        prevTable = self.symbolTable
+        self.symbolTable = SymbolTable(prevTable.parent, prevTable.name)
+        self.symbolTable.put(whLoop.type, Symbol(whLoop.type, whLoop))
+        self.symbolTable.append(prevTable)
         self.analyzeCondExpr(whLoop.cond)
         whLoop.instr.accept(self)
+        self.symbolTable = prevTable
+
 
     def visit_RepeatUntilLoop(self, repeatLoop):
+        prevTable = self.symbolTable
+        self.symbolTable = SymbolTable(prevTable.parent, prevTable.name)
+        self.symbolTable.put(repeatLoop.type, Symbol(repeatLoop.type, repeatLoop))
+        self.symbolTable.append(prevTable)
         self.analyzeInstructionBlock(repeatLoop.instr)
         self.analyzeCondExpr(repeatLoop.cond)
 
@@ -221,7 +231,6 @@ class TypeChecker:
     def visit_FunctionDefinition(self, funDef):
         prevTable = self.symbolTable
         self.symbolTable = SymbolTable(prevTable, "fundef(" + funDef.ident + ") scope")
-
         for arg in funDef.args:
             self.symbolTable.put(arg.ident, VariableSymbol(arg.ident, arg.typ, arg))
 
@@ -252,4 +261,30 @@ class TypeChecker:
         return funDef.typ
 
     def visit_Return(self, ret):
+        table = self.symbolTable
+        symbolTableName = table.name
+        inFunction = False
+        while(table.getParentScope() is not None):
+            if(symbolTableName.find("fundef") is not -1):
+                inFunction = True
+            table = table.getParentScope()
+            symbolTableName = table.name
+
+        if not inFunction:
+            self.raiseError("Error: return instruction outside a function: line " + str(ret.lineno))
         return self.acceptOrVar(ret.value)
+
+    def visit_Print(self, prt):
+        prtType = self.acceptOrVar(prt.expr)
+        if prtType is None:
+            self.raiseError("Error: Expression '" + str(prt.expr) + "' undefined in current scope: line " + str(prt.lineno))
+            return None
+        return  None
+
+    def visit_Continue(self, cont):
+        if self.symbolTable.get("while") is None and self.symbolTable.get("repeat") is None:
+            self.raiseError("Error: continue instruction outside a loop: "+ str(cont.lineno))
+
+    def visit_Break(self, cont):
+        if self.symbolTable.get("while") is None and self.symbolTable.get("repeat") is None:
+            self.raiseError("Error: break instruction outside a loop: "+ str(cont.lineno))

@@ -11,7 +11,7 @@ import ast.TreePrinter
 if __name__ == '__main__':
 
     try:
-        filename = sys.argv[1] if len(sys.argv) > 1 else "tests/funs8.in"
+        filename = sys.argv[1] if len(sys.argv) > 1 else "tests/vars_undef.in"
         file = open(filename, "r")
     except IOError:
         print("Cannot open {0} file".format(filename))
