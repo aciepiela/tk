@@ -12,9 +12,7 @@ operators = {
     '/': lambda x, y: x / y,
     '%': lambda x, y: x % y,
 
-    'OR': lambda x, y: x or y,
     '<=': lambda x, y: not (x > y),
-    'AND': lambda x, y: x and y,
     '>=': lambda x, y: x >= y,
     '==': lambda x, y: x == y,
     '<': lambda x, y: x < y,
@@ -24,8 +22,8 @@ operators = {
     '|': lambda x, y: x | y,
     '^': lambda x, y: x ^ y,
     '&': lambda x, y: x & y,
-    'SHL': lambda x, y: x << y,
-    'SHR': lambda x, y: x >> y
+    '<<': lambda x, y: x << y,
+    '>>': lambda x, y: x >> y
 
 }
 
