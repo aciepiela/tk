@@ -1,0 +1,6 @@
+Error: Assigment of string to int: line 4
+Error: Illegal operation, string - string: line 6
+Error: Illegal assigment to variable 'u': line 6
+Error: Illegal operation, string / string: line 7
+Error: Illegal assigment to variable 'u': line 7
+TypeChecker znalazł błędy.
