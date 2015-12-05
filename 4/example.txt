@@ -1,0 +1,32 @@
+int a = 0, a=0;
+int a = 0;
+
+string greet(string name)
+{
+    string str = "Hey, " + name;
+    int a = 0;
+    int a = 0;
+    return 1;
+}
+
+string greetMe()
+{
+    continue;
+    return great(a);
+}
+
+
+int inc(int n)
+{
+    return n+1;
+}
+
+int inc5(int n) {
+    return inc(inc(inc(inc(inc(n)))));
+}
+
+print greet("you");  
+print greetMe();
+print inc(1);
+print inc5(10);
+

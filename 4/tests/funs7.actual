@@ -1,0 +1,2 @@
+Error: Missing correct return statement in function 'gcd_iter' returning int: line 4
+TypeChecker znalazł błędy.

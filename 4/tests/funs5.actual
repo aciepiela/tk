@@ -1,0 +1,4 @@
+Error: Call of undefined fun: 'nbonacci': line 5
+Error: Call of undefined fun: 'nbonacci': line 5
+Error: Redefinition of function 'trib': line 8
+TypeChecker znalazł błędy.

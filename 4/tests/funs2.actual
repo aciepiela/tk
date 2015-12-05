@@ -1,0 +1,5 @@
+Error: Improper number of args in gcd: line 9
+Error: Improper number of args in gcd: line 11
+Error: Improper type of arg in gcd, expected int, actual string: line 21
+Error: Improper type of arg in gcd, expected int, actual string: line 21
+TypeChecker znalazł błędy.
