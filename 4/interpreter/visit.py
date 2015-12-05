@@ -55,12 +55,12 @@ class Dispatcher(object):
             ks = t.iterkeys()
 
             # --------------------------------------------------------------------
-            returnFromCall = [t[k](*args, **kw) for k in ks if issub(typ, k)]
+            to_return = [t[k](*args, **kw) for k in ks if issub(typ, k)]
             #--------------------------------------------------------------------
-            if len(returnFromCall) != 1:
-                print "Inna niż 1 długość dziwnej listy z visitora, oto lista", returnFromCall
+            if len(to_return) != 1:
+                print "Visitor has returned an array of length different than 1: ", to_return
                 return None
-            return returnFromCall[0]
+            return to_return[0]
 
     def add_target(self, typ, target):
         self.targets[typ] = target

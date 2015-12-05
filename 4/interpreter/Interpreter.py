@@ -6,26 +6,27 @@ from interpreter.Exceptions import *
 from interpreter.visit import *
 
 operators = {
-    '+': lambda x, y: x + y,
     '-': lambda x, y: x - y,
+    '+': lambda x, y: x + y,
     '*': lambda x, y: x * y,
     '/': lambda x, y: x / y,
     '%': lambda x, y: x % y,
 
-    '^': lambda x, y: x ^ y,
-    '|': lambda x, y: x | y,
-    '&': lambda x, y: x & y,
-    'SHL': lambda x, y: x << y,
-    'SHR': lambda x, y: x >> y,
-
     'OR': lambda x, y: x or y,
-    'AND': lambda x, y: x and y,
     '<=': lambda x, y: not (x > y),
+    'AND': lambda x, y: x and y,
     '>=': lambda x, y: x >= y,
+    '==': lambda x, y: x == y,
     '<': lambda x, y: x < y,
     '>': lambda x, y: x > y,
-    '==': lambda x, y: x == y,
-    '!=': lambda x, y: not x == y
+    '!=': lambda x, y: not x == y,
+
+    '|': lambda x, y: x | y,
+    '^': lambda x, y: x ^ y,
+    '&': lambda x, y: x & y,
+    'SHL': lambda x, y: x << y,
+    'SHR': lambda x, y: x >> y
+
 }
 
 
@@ -38,7 +39,7 @@ class Interpreter(object):
     def visit(self, node):
         print "visit", node
 
-    def count_or_get_value_from_memory(self, node):
+    def eval_or_get_from_memory(self, node):
         if isinstance(node, str):
             return self.memoryStack.get(node)
         else:
@@ -47,7 +48,7 @@ class Interpreter(object):
     def fill_memory(self, memory, declarations):
         for declaration in declarations:
             for var in declaration.variables:
-                initial_value = self.count_or_get_value_from_memory(var.right)
+                initial_value = self.eval_or_get_from_memory(var.right)
                 memory.put(var.left, initial_value)
 
     def interpret_instruction_block(self, block):
@@ -65,7 +66,7 @@ class Interpreter(object):
                 self.functions.pushGlobalMemory(global_memory)
             if isinstance(p, Variable):
                 for var in p.variables:
-                    initial_value = self.count_or_get_value_from_memory(var.right)
+                    initial_value = self.eval_or_get_from_memory(var.right)
                     global_memory.put(var.left, initial_value)
                     self.memoryStack = MemoryStack(global_memory)
                     self.functions.pushGlobalMemory(global_memory)
@@ -96,7 +97,7 @@ class Interpreter(object):
         args = node.args
         memory = Memory("funcall")
         for def_arg, passed_arg in zip(fundef.args, args):
-            memory.put(def_arg.ident, self.count_or_get_value_from_memory(passed_arg))
+            memory.put(def_arg.ident, self.eval_or_get_from_memory(passed_arg))
 
         previous_stack = self.memoryStack
         self.memoryStack = self.functions.getStack(node.ident, memory)
@@ -151,33 +152,33 @@ class Interpreter(object):
 
     @when(Print)
     def visit(self, node):
-        print self.count_or_get_value_from_memory(node.expr)
+        print self.eval_or_get_from_memory(node.expr)
 
     @when(Return)
     def visit(self, node):
-        value = self.count_or_get_value_from_memory(node.value)
+        value = self.eval_or_get_from_memory(node.value)
         raise ReturnException(value)
 
     @when(RelExpr)
     def visit(self, node):
-        r1 = self.count_or_get_value_from_memory(node.left)
-        r2 = self.count_or_get_value_from_memory(node.right)
+        r1 = self.eval_or_get_from_memory(node.left)
+        r2 = self.eval_or_get_from_memory(node.right)
         result = operators[node.op](r1, r2)
         if not isinstance(result, bool):
-            raise Exception("not bool operator: " + node.op + " in line " + node.lineno)
+            raise Exception("Error: not a boolean operator: " + node.op + ": line " + node.lineno)
         return result
 
     @when(BinExpr)
     def visit(self, node):
-        r1 = self.count_or_get_value_from_memory(node.left)
-        r2 = self.count_or_get_value_from_memory(node.right)
+        r1 = self.eval_or_get_from_memory(node.left)
+        r2 = self.eval_or_get_from_memory(node.right)
         result = operators[node.op](r1, r2)
         return result
 
     @when(Assignment)
     def visit(self, node):
         varName = node.left
-        value = self.count_or_get_value_from_memory(node.right)
+        value = self.eval_or_get_from_memory(node.right)
         self.memoryStack.put(varName, value)
 
     @when(Const)

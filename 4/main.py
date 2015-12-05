@@ -31,4 +31,4 @@ if __name__ == '__main__':
     if checker.errors == 0:
         ast.accept_interpreter(Interpreter())
     else:
-        print "TypeChecker znalazł błędy."
+        print "There were errors in the file. Aborting tests..."

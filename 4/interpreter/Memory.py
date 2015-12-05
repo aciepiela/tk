@@ -8,7 +8,7 @@ class Memory:
     def has_key(self, name):  # variable name
         return name in self.memoryDic
 
-    def get(self, name):  # get from memory current value of variable <name>
+    def get(self, name):  # gets from memory current value of variable <name>
         if name in self.memoryDic:
             return self.memoryDic[name]
         else:
@@ -25,7 +25,7 @@ class MemoryStack:
     def __init__(self, memory=None):  # initialize memory stack with memory <memory>
         self.memoryStack = [memory]
 
-    def get(self, name):  # get from memory stack current value of variable <name>
+    def get(self, name):  # gets from memory stack current value of variable <name>
         for i in reversed(self.memoryStack):
             if i.has_key(name): return i.get(name)
         return False
@@ -35,9 +35,9 @@ class MemoryStack:
             if i.has_key(name):
                 i.put(name, value)
                 return True
-        raise Exception("nie ma takiej zmiennej" + name)
+        raise Exception("Error: variable not defined: " + name)
 
-    def push(self, memory):  # push memory <memory> onto the stack
+    def push(self, memory):  # pushes memory <memory> onto the stack
         self.memoryStack.append(memory)
 
     def pop(self):  # pops the top memory from the stack
